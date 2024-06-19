@@ -1,3 +1,4 @@
+<!-- resources/views/dashboard.blade.php -->
 @extends('layouts.main')
 
 @section('title', 'Dashboard')

@@ -46,7 +46,7 @@ class KegiatanController extends Controller
             }
         }
     
-        return redirect()->back()->with('success', 'Kegiatan berhasil ditambahkan.');
+        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil disimpan.');
     }
 
     public function update(Request $request, $id)
@@ -78,7 +78,7 @@ class KegiatanController extends Controller
             }
         }
 
-        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil diperbarui.');
+        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil diedit.');
     }
 
     public function print($id)
