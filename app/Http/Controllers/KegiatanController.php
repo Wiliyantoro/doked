@@ -13,7 +13,16 @@ class KegiatanController extends Controller
 {
     public function index()
     {
-        $kegiatans = Kegiatan::all();
+        //dd('KegiatanController@index: Accessing kegiatan index');
+        
+        $userLevel = auth()->user()->level;
+        if ($userLevel == 1) {
+            $kegiatans = Kegiatan::all();
+        } else {
+            $kegiatans = Kegiatan::where('user_id', auth()->id())->get();
+        }
+        //Log::info('KegiatanController@index: Accessing kegiatan index');
+        //dd($kegiatans);
         return view('kegiatan.index', compact('kegiatans'));
     }
 
@@ -23,11 +32,17 @@ class KegiatanController extends Controller
             'nama_kegiatan' => 'required',
             'rincian_kegiatan' => 'required',
             'tanggal_kegiatan' => 'required|date',
-            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048' // Sesuaikan kebutuhan
+            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048' // Validasi untuk setiap foto
         ]);
     
-        $kegiatan = Kegiatan::create($request->except('fotos'));
+        $kegiatan = new Kegiatan();
+        $kegiatan->nama_kegiatan = $request->nama_kegiatan;
+        $kegiatan->rincian_kegiatan = $request->rincian_kegiatan;
+        $kegiatan->tanggal_kegiatan = $request->tanggal_kegiatan;
+        $kegiatan->user_id = auth()->id(); // Menetapkan user_id dari pengguna yang sedang login
+        $kegiatan->save();
     
+        // Simpan foto jika ada
         if ($request->hasFile('fotos')) {
             foreach ($request->file('fotos') as $foto) {
                 // Resize dan kompresi gambar
@@ -35,17 +50,19 @@ class KegiatanController extends Controller
                     $constraint->aspectRatio();
                 })->encode('jpg', 75); // Kompresi gambar dengan kualitas 75%
     
-                // Simpan gambar yang telah diresize ke path sementara
-                $path = 'foto_kegiatan/' . uniqid() . '.jpg';
-                Storage::disk('public')->put($path, $image);
+                // Simpan gambar ke dalam folder storage/public/foto_kegiatan/ dengan nama yang unik
+                $path = $foto->store('foto_kegiatan', 'public');
+    
+                // Ambil nama file dari path yang dihasilkan oleh metode store
+                $fileName = basename($path);
+    
+                // Buat path relatif untuk penyimpanan di database
+                $path = 'foto_kegiatan/' . $fileName;
     
                 // Buat model Foto dan simpan ke database
-                $kegiatan->fotos()->create([
-                    'nama_file' => $path
-                ]);
+                $kegiatan->fotos()->create(['nama_file' => $path]);
             }
         }
-    
         return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil disimpan.');
     }
 
@@ -59,6 +76,12 @@ class KegiatanController extends Controller
         ]);
 
         $kegiatan = Kegiatan::findOrFail($id);
+
+        // Memeriksa apakah pengguna memiliki akses untuk mengedit kegiatan
+        if (!$this->hasAccess($kegiatan)) {
+            abort(403, 'Anda tidak memiliki akses untuk mengedit kegiatan ini.');
+        }
+
         $kegiatan->update($request->except('fotos'));
 
         if ($request->hasFile('fotos')) {
@@ -112,19 +135,45 @@ class KegiatanController extends Controller
 
     public function destroy($id)
     {
+        // Temukan kegiatan berdasarkan ID atau lemparkan pengecualian jika tidak ditemukan
         $kegiatan = Kegiatan::findOrFail($id);
-
+    
+        // Memeriksa apakah pengguna memiliki akses untuk menghapus kegiatan
+        if (!$this->hasAccess($kegiatan)) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus kegiatan ini.');
+        }
+    
+        // Hapus setiap foto terkait dengan kegiatan
         foreach ($kegiatan->fotos as $foto) {
+            // Dapatkan path lengkap ke foto
             $fotoPath = storage_path('app/public/' . $foto->nama_file);
+    
+            // Hapus file foto jika ada
             if (file_exists($fotoPath)) {
                 unlink($fotoPath);
             }
+    
+            // Hapus record foto dari database
             $foto->delete();
         }
-
+    
+        // Hapus kegiatan dari database
         $kegiatan->delete();
-
+    
+        // Redirect kembali ke halaman index dengan pesan sukses
         return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil dihapus.');
     }
-}
 
+    // Tambahkan fungsi berikut untuk mengecek apakah pengguna memiliki akses ke kegiatan tertentu
+    private function hasAccess($kegiatan)
+    {
+        $userLevel = auth()->user()->level;
+        if ($userLevel == 1) {
+            // Jika pengguna adalah administrator, beri akses ke semua kegiatan
+            return true;
+        } else {
+            // Jika pengguna adalah pengguna biasa, periksa apakah kegiatan dibuat oleh pengguna itu sendiri
+            return $kegiatan->user_id == auth()->id();
+        }
+    }
+}

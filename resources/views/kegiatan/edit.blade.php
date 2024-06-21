@@ -1,65 +1,44 @@
-@extends('layouts.main')
-
-@section('title', 'Edit Profil')
-
-@section('content')
-<div class="container">
-    <h2>Edit Profil</h2>
-
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-
-        <div class="form-group">
-            <label for="name">Nama</label>
-            <input type="text" name="name" class="form-control" value="{{ Auth::user()->name }}" required>
-        </div>
-
-        <div class="form-group">
-            <label for="foto_pengguna">Foto Pengguna</label>
-            <input type="file" name="foto_pengguna" class="form-control" accept="image/*" onchange="previewImage(event)">
-            
-            <div id="imagePreview" class="mt-2">
-                @if(Auth::user()->foto_pengguna)
-                    <img src="{{ Storage::url(Auth::user()->foto_pengguna) }}" alt="Foto Pengguna" class="img-thumbnail" style="width: 150px;">
-                @else
-                    <p>Foto tidak ada</p>
-                @endif
+<!-- Edit Kegiatan Modal -->
+<div class="modal fade" id="editKegiatanModal{{ $kegiatan->id }}" tabindex="-1" aria-labelledby="editKegiatanModalLabel{{ $kegiatan->id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editKegiatanModalLabel{{ $kegiatan->id }}">Edit Kegiatan</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ route('kegiatan.update', $kegiatan->id) }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="form-group">
+                        <label for="nama_kegiatan{{ $kegiatan->id }}">Nama Kegiatan:</label>
+                        <input type="text" class="form-control" id="nama_kegiatan{{ $kegiatan->id }}" name="nama_kegiatan" value="{{ $kegiatan->nama_kegiatan }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rincian_kegiatan{{ $kegiatan->id }}">Rincian Kegiatan:</label>
+                        <textarea class="form-control" id="rincian_kegiatan{{ $kegiatan->id }}" name="rincian_kegiatan" rows="4" required>{{ $kegiatan->rincian_kegiatan }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal_kegiatan{{ $kegiatan->id }}">Tanggal Kegiatan:</label>
+                        <input type="date" class="form-control" id="tanggal_kegiatan{{ $kegiatan->id }}" name="tanggal_kegiatan" value="{{ $kegiatan->tanggal_kegiatan }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="foto{{ $kegiatan->id }}">Foto:</label>
+                        <input type="file" class="form-control-file" id="foto{{ $kegiatan->id }}" name="fotos[]" accept="image/*" onchange="previewImages(event, 'editPreview{{ $kegiatan->id }}')" multiple>
+                        <div id="editPreview{{ $kegiatan->id }}">
+                            @foreach($kegiatan->fotos as $foto)
+                                <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
             </div>
         </div>
-
-        <div class="form-group">
-            <label for="password">Kata Sandi Baru</label>
-            <input type="password" name="password" class="form-control">
-        </div>
-
-        <div class="form-group">
-            <label for="password_confirmation">Konfirmasi Kata Sandi Baru</label>
-            <input type="password" name="password_confirmation" class="form-control">
-        </div>
-
-        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-    </form>
+    </div>
 </div>
-@endsection
-
-@push('scripts')
-<script>
-    function previewImage(event) {
-        var imagePreview = document.getElementById('imagePreview');
-        var file = event.target.files[0];
-        var reader = new FileReader();
-
-        reader.onload = function(e) {
-            imagePreview.innerHTML = '<img src="' + e.target.result + '" alt="Foto Pengguna" class="img-thumbnail mt-2" style="width: 150px;">';
-        };
-
-        reader.readAsDataURL(file);
-    }
-</script>
-@endpush

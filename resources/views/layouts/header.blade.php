@@ -4,12 +4,12 @@
         <div class="d-flex align-items-center ml-auto">
             {{-- Tampilkan foto profil dalam bentuk bulat --}}
             <div class="rounded-circle overflow-hidden ml-2 mr-2" style="width: 40px; height: 40px;">
-                <img src="{{ Auth::user()->foto_pengguna ? asset('storage/foto_pengguna/' . Auth::user()->foto_pengguna) : 'https://via.placeholder.com/40' }}" alt="Profile Picture" class="w-100">
+                <img src="{{ asset('storage/foto_pengguna/' . Auth::user()->foto_pengguna) }}" alt="Profile Picture" class="w-100">
             </div>
             {{-- Tampilkan nama akun yang sedang login --}}
             <span>{{ Auth::user()->name }}</span>
         </div>
-        
+
         {{-- Tombol dropdown menu dan logout berada di sebelah kiri --}}
         <div class="d-flex align-items-center">
             {{-- Tombol dropdown menu --}}
@@ -19,7 +19,8 @@
                 </a>
                 <div class="dropdown-menu" aria-labelledby="userDropdown">
                     {{-- Isi dropdown menu --}}
-                    <a class="dropdown-item" href="{{ route('profile.edit') }}">Profil Saya</a>
+                    <a class="dropdown-item" href="{{ route('profile.index') }}">Profil Saya</a>
+                    <a class="dropdown-item" href="#">Pengaturan</a>
                     <div class="dropdown-divider"></div>
                     {{-- Tambahkan tombol logout di dalam dropdown menu --}}
                     <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>

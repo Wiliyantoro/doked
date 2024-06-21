@@ -39,3 +39,25 @@
         </div>
     </div>
 </div>
+<!-- Script for image preview -->
+<script>
+    function previewImages(event, previewId) {
+        var files = event.target.files;
+        var output = document.getElementById(previewId);
+        output.innerHTML = ''; // Clear the current content
+        
+        for (var i = 0; i < files.length; i++) {
+            var reader = new FileReader();
+            reader.onload = (function(file) { // Create a closure to handle each file separately
+                return function(e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.maxWidth = '300px';
+                    img.style.marginTop = '10px';
+                    output.appendChild(img);
+                };
+            })(files[i]);
+            reader.readAsDataURL(files[i]);
+        }
+    }
+</script>

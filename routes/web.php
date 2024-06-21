@@ -6,6 +6,8 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Middleware\RedirectIfNotAuthenticated;
+use App\Http\Middleware\LogRequests;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +21,7 @@ use App\Http\Middleware\RedirectIfNotAuthenticated;
 */
 
 // Route untuk login
+Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -27,8 +30,9 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::middleware([RedirectIfNotAuthenticated::class])->group(function () {
     // Route untuk dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // Route untuk kegiatan
+
+    //Route untuk kegiatan
+    //Route::prefix('kegiatan')->group(function () {
     Route::prefix('kegiatan')->group(function () {
         Route::get('/', [KegiatanController::class, 'index'])->name('kegiatan.index');
         Route::post('/store', [KegiatanController::class, 'store'])->name('kegiatan.store');
@@ -36,8 +40,25 @@ Route::middleware([RedirectIfNotAuthenticated::class])->group(function () {
         Route::delete('/{id}', [KegiatanController::class, 'destroy'])->name('kegiatan.destroy');
         Route::get('/print/{id}', [KegiatanController::class, 'print'])->name('kegiatan.print');
     });
-
-    // Route untuk profil
+});
+// Route::middleware(['log.requests'])->group(function () {
+//     Route::prefix('kegiatan')->group(function () {
+//         Route::get('/', [KegiatanController::class, 'index'])->name('kegiatan.index');
+//         Route::post('/store', [KegiatanController::class, 'store'])->name('kegiatan.store');
+//         Route::put('/{id}', [KegiatanController::class, 'update'])->name('kegiatan.update');
+//         Route::delete('/{id}', [KegiatanController::class, 'destroy'])->name('kegiatan.destroy');
+//         Route::get('/print/{id}', [KegiatanController::class, 'print'])->name('kegiatan.print');
+//     });
+// });
+// Route untuk profil
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+});
+
+// Route untuk user
+Route::middleware(['auth'])->group(function () {
+    Route::resource('user', UserController::class)->except(['show']);
+    Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
 });

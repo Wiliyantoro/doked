@@ -1,4 +1,3 @@
-<!-- Update Sidebar -->
 <nav class="navbar navbar-expand-md navbar-dark bg-dark sidebar">
     <div class="container-fluid flex-column">
         <a class="navbar-brand" href="#">Dashboard</a>
@@ -18,15 +17,17 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link text-white {{ Request::routeIs('profile.edit') ? 'active' : '' }}" href="{{ route('profile.edit') }}">
-                        <i class="fas fa-user"></i> Profil
+                    <a class="nav-link text-white {{ Request::routeIs('profile.index') ? 'active' : '' }}" href="{{ route('profile.index') }}">
+                        <i class="fas fa-user"></i> Profil Saya
                     </a>
                 </li>
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white {{ Request::routeIs('settings') ? 'active' : '' }}" href="#">
-                        <i class="fas fa-cogs"></i> Setting
-                    </a>
-                </li>
+                @if(Auth::user()->level == 1)
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white {{ Request::routeIs('user.index') ? 'active' : '' }}" href="{{ route('user.index') }}">
+                            <i class="fas fa-users"></i> User
+                        </a>
+                    </li>
+                @endif
             </ul>
         </div>
     </div>

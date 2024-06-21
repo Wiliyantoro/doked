@@ -32,16 +32,20 @@
         <table class="table table-bordered">
             <thead>
                 <tr>
+                    <th>No</th>
                     <th>Nama Kegiatan</th>
                     <th>Rincian Kegiatan</th>
                     <th>Tanggal Kegiatan</th>
                     <th>Foto</th>
+                    <th>Dibuat oleh</th> <!-- Tambah kolom dibuat oleh -->
                     <th>Aksi</th>
                 </tr>
             </thead>
             <tbody>
+                @php $no = 1; @endphp <!-- Inisialisasi variabel nomor urutan -->
                 @foreach($kegiatans as $kegiatan)
                     <tr>
+                        <td>{{ $no++ }}</td> <!-- Menampilkan nomor urutan -->
                         <td>{{ $kegiatan->nama_kegiatan }}</td>
                         <td>{{ $kegiatan->rincian_kegiatan }}</td>
                         <td>{{ \Carbon\Carbon::parse($kegiatan->tanggal_kegiatan)->locale('id')->isoFormat('D MMMM YYYY') }}</td>
@@ -54,18 +58,25 @@
                                 Tidak ada foto
                             @endif
                         </td>
+                        <td>{{ $kegiatan->user->name }}</td> <!-- Menampilkan nama pengguna yang membuat kegiatan -->
                         <td>
-                            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#editKegiatanModal{{ $kegiatan->id }}">
-                                Edit
-                            </button>
-                            <form action="{{ route('kegiatan.destroy', $kegiatan->id) }}" method="POST" style="display:inline-block;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                            </form>
-                            <a href="{{ route('kegiatan.print', $kegiatan->id) }}" class="btn btn-info btn-sm" target="_blank">
-                                Cetak
-                            </a>
+                            @if($kegiatan->user_id == auth()->id())
+                                <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#editKegiatanModal{{ $kegiatan->id }}">
+                                    Edit
+                                </button>
+                            @endif
+                            @if(Auth::user()->level == 1)
+                                <form action="{{ route('kegiatan.destroy', $kegiatan->id) }}" method="POST" style="display:inline-block;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                </form>
+                            @endif
+                            @if(Auth::user()->level == 1)
+        <a href="{{ route('kegiatan.print', $kegiatan->id) }}" class="btn btn-info btn-sm" target="_blank">
+            Cetak
+        </a>
+    @endif
                         </td>
                     </tr>
                     @include('kegiatan.edit', ['kegiatan' => $kegiatan])
