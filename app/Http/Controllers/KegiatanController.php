@@ -32,37 +32,40 @@ class KegiatanController extends Controller
             'nama_kegiatan' => 'required',
             'rincian_kegiatan' => 'required',
             'tanggal_kegiatan' => 'required|date',
-            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048' // Validasi untuk setiap foto
+            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
     
         $kegiatan = new Kegiatan();
         $kegiatan->nama_kegiatan = $request->nama_kegiatan;
         $kegiatan->rincian_kegiatan = $request->rincian_kegiatan;
         $kegiatan->tanggal_kegiatan = $request->tanggal_kegiatan;
-        $kegiatan->user_id = auth()->id(); // Menetapkan user_id dari pengguna yang sedang login
+        $kegiatan->user_id = auth()->id(); 
         $kegiatan->save();
     
-        // Simpan foto jika ada
         if ($request->hasFile('fotos')) {
             foreach ($request->file('fotos') as $foto) {
-                // Resize dan kompresi gambar
                 $image = Image::make($foto)->resize(800, null, function ($constraint) {
                     $constraint->aspectRatio();
-                })->encode('jpg', 75); // Kompresi gambar dengan kualitas 75%
+                })->encode('jpg', 75); 
     
-                // Simpan gambar ke dalam folder storage/public/foto_kegiatan/ dengan nama yang unik
-                $path = $foto->store('foto_kegiatan', 'public');
+                $path = 'foto_kegiatan/' . uniqid() . '.jpg';
+                Storage::disk('public')->put($path, $image);
     
-                // Ambil nama file dari path yang dihasilkan oleh metode store
-                $fileName = basename($path);
-    
-                // Buat path relatif untuk penyimpanan di database
-                $path = 'foto_kegiatan/' . $fileName;
-    
-                // Buat model Foto dan simpan ke database
                 $kegiatan->fotos()->create(['nama_file' => $path]);
             }
         }
+    
+        if ($request->has('camera_photos')) {
+            foreach ($request->camera_photos as $cameraPhoto) {
+                $image = Image::make($cameraPhoto)->encode('jpg', 75);
+    
+                $path = 'foto_kegiatan/' . uniqid() . '.jpg';
+                Storage::disk('public')->put($path, $image);
+    
+                $kegiatan->fotos()->create(['nama_file' => $path]);
+            }
+        }
+    
         return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil disimpan.');
     }
 

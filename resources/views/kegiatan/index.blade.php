@@ -60,23 +60,21 @@
                         </td>
                         <td>{{ $kegiatan->user->name }}</td> <!-- Menampilkan nama pengguna yang membuat kegiatan -->
                         <td>
-                            @if($kegiatan->user_id == auth()->id())
+                            @if($kegiatan->user_id == auth()->id() || Auth::user()->level == 2)
                                 <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#editKegiatanModal{{ $kegiatan->id }}">
                                     Edit
                                 </button>
                             @endif
-                            @if(Auth::user()->level == 1)
+                            @if(Auth::user()->level == 1 || Auth::user()->level == 2)
                                 <form action="{{ route('kegiatan.destroy', $kegiatan->id) }}" method="POST" style="display:inline-block;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                 </form>
+                                <a href="{{ route('kegiatan.print', $kegiatan->id) }}" class="btn btn-info btn-sm" target="_blank">
+                                    Cetak
+                                </a>
                             @endif
-                            @if(Auth::user()->level == 1)
-        <a href="{{ route('kegiatan.print', $kegiatan->id) }}" class="btn btn-info btn-sm" target="_blank">
-            Cetak
-        </a>
-    @endif
                         </td>
                     </tr>
                     @include('kegiatan.edit', ['kegiatan' => $kegiatan])
