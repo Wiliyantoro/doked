@@ -6,6 +6,7 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,
+            copy: ['resources/images'], // Tambahkan folder images ke opsi copy
         }),
     ],
 });
