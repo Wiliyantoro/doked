@@ -31,6 +31,7 @@
                         <div class="camera-container">
                             <video id="camera" width="100%" autoplay></video>
                             <button type="button" class="btn btn-primary mt-2" onclick="capturePhoto()">Ambil Foto</button>
+                            <button type="button" class="btn btn-secondary mt-2" id="switchCamera">Ganti Kamera</button>
                         </div>
                         <canvas id="canvas" style="display: none;"></canvas>
                         <div id="cameraPreview"></div>
@@ -46,60 +47,90 @@
     </div>
 </div>
 <script>
+    let currentStream;
+    let video = document.getElementById('camera');
+    let canvas = document.getElementById('canvas');
+    let cameraPreview = document.getElementById('cameraPreview');
+    let currentFacingMode = 'user'; // Default to front camera
+
     $(document).ready(function() {
         $('#createKegiatanModal').on('shown.bs.modal', function () {
-            var video = document.getElementById('camera');
-            var canvas = document.getElementById('canvas');
-            var cameraPreview = document.getElementById('cameraPreview');
-
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(function(stream) {
-                        video.srcObject = stream;
-                        video.play();
-                    })
-                    .catch(function(err) {
-                        console.log("An error occurred: " + err);
-                    });
-            } else {
-                console.log("getUserMedia is not supported in this browser.");
-            }
+            startCamera();
         });
 
         $('#createKegiatanModal').on('hidden.bs.modal', function () {
-            var video = document.getElementById('camera');
-            var stream = video.srcObject;
-            var tracks = stream.getTracks();
+            stopCamera();
+        });
 
-            tracks.forEach(function(track) {
-                track.stop();
-            });
-
-            video.srcObject = null;
-            document.getElementById('cameraPreview').innerHTML = "";
+        $('#switchCamera').on('click', function() {
+            currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+            startCamera();
         });
     });
 
-    function capturePhoto() {
-        var video = document.getElementById('camera');
-        var canvas = document.getElementById('canvas');
-        var cameraPreview = document.getElementById('cameraPreview');
+    function startCamera() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
 
-        var context = canvas.getContext('2d');
+        const constraints = {
+            video: {
+                facingMode: currentFacingMode
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(stream => {
+                currentStream = stream;
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(err => {
+                console.log("An error occurred: " + err);
+            });
+    }
+
+    function stopCamera() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        video.srcObject = null;
+        document.getElementById('cameraPreview').innerHTML = "";
+    }
+
+    function capturePhoto() {
+        const context = canvas.getContext('2d');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        var dataURL = canvas.toDataURL('image/png');
-        var img = document.createElement('img');
+        const dataURL = canvas.toDataURL('image/png');
+        const img = document.createElement('img');
         img.src = dataURL;
         img.style.maxWidth = '100px';
         cameraPreview.appendChild(img);
 
-        var input = document.createElement('input');
+        const input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'camera_photos[]';
         input.value = dataURL;
         cameraPreview.appendChild(input);
+    }
+
+    function previewImages(event, previewContainerId) {
+        const previewContainer = document.getElementById(previewContainerId);
+        previewContainer.innerHTML = '';
+
+        const files = event.target.files;
+        for (const file of files) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100px';
+                previewContainer.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
     }
 </script>

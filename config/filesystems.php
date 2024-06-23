@@ -14,6 +14,8 @@ return [
     */
 
     'default' => env('FILESYSTEM_DISK', 'local'),
+    'max_size' => 10240, // 10 MB dalam kilobyte
+
 
     /*
     |--------------------------------------------------------------------------

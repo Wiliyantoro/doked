@@ -32,7 +32,7 @@ class KegiatanController extends Controller
             'nama_kegiatan' => 'required',
             'rincian_kegiatan' => 'required',
             'tanggal_kegiatan' => 'required|date',
-            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120'
         ]);
     
         $kegiatan = new Kegiatan();
