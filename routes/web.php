@@ -70,4 +70,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/settings/restore-database', [BackupController::class, 'restoreDatabase'])->name('settings.restoreDatabase');
     Route::post('/settings/backup-data', [BackupController::class, 'backupData'])->name('settings.backupData');
     Route::post('/settings/restore-data', [BackupController::class, 'restoreData'])->name('settings.restoreData');
+    Route::get('/settings/download-backup/{file}', [BackupController::class, 'downloadBackup'])->name('settings.downloadBackup');
+    Route::delete('/settings/delete-backup/{file}', [BackupController::class, 'deleteBackup'])->name('settings.deleteBackup');
 });

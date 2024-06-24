@@ -65,5 +65,33 @@
             </form>
         </div>
     </div>
+
+    {{-- List of Backups --}}
+    <div class="card mt-3">
+        <div class="card-header">
+            Backup Files
+        </div>
+        <div class="card-body">
+            @if($backupFiles)
+                <ul class="list-group">
+                    @foreach($backupFiles as $file)
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ basename($file) }}
+                            <div>
+                                <a href="{{ route('settings.downloadBackup', ['file' => basename($file)]) }}" class="btn btn-sm btn-success">Download</a>
+                                <form action="{{ route('settings.deleteBackup', ['file' => basename($file)]) }}" method="POST" style="display:inline-block;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <p>No backup files found.</p>
+            @endif
+        </div>
+    </div>
 </div>
 @endsection

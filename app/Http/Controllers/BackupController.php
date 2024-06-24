@@ -11,45 +11,36 @@ class BackupController extends Controller
 {
     public function index()
     {
-        return view('settings.index');
+        $backupFiles = Storage::files('backups');
+        return view('settings.index', compact('backupFiles'));
     }
 
     public function backupDatabase()
     {
-        // Pastikan folder backups ada
-        $backupFolder = storage_path('app/backups');
-        if (!file_exists($backupFolder)) {
-            mkdir($backupFolder, 0777, true);
-        }
-
         // Nama file backup
         $backupFileName = 'database_backup_' . date('Ymd_His') . '.sql';
     
         // Path untuk menyimpan file backup
-        $backupFilePath = $backupFolder . '/' . $backupFileName;
-    
-        // Command untuk menjalankan mysqldump
+        $backupFilePath = storage_path('app/backups/' . $backupFileName);
+
+        // Menjalankan mysqldump
         $command = sprintf(
-            'mysqldump --host=%s --user=%s --password=%s --no-tablespaces --databases %s > %s',
+            'mysqldump --host=%s --user=%s --no-tablespaces --databases %s > %s',
             config('database.connections.mysql.host'),
             config('database.connections.mysql.username'),
-            config('database.connections.mysql.password'),
             config('database.connections.mysql.database'),
             $backupFilePath
         );
-        //dd($command);
-    
-        // Jalankan perintah untuk membuat backup
+
         exec($command, $output, $resultCode);
-        
-    
+
         // Periksa apakah backup berhasil dibuat
         if ($resultCode === 0) {
             // Jika berhasil, kirim file backup untuk di-download
             return response()->download($backupFilePath)->deleteFileAfterSend(true);
         } else {
             // Jika gagal, beri pesan error
-            return back()->with('error', 'Failed to create database backup.');
+            return back()->with('error', 'Failed to create database backup. Check log for details.');
         }
     }
 
@@ -71,20 +62,15 @@ class BackupController extends Controller
 
     public function backupData()
     {
-        // Pastikan folder backups ada
-        $backupFolder = storage_path('app/backups');
-        if (!file_exists($backupFolder)) {
-            mkdir($backupFolder, 0777, true);
-        }
-
         $zip = new ZipArchive;
         $fileName = 'data_backup_' . date('Y-m-d_His') . '.zip';
-        $filePath = $backupFolder . '/' . $fileName;
+        $filePath = storage_path('app/backups/' . $fileName);
 
         if ($zip->open($filePath, ZipArchive::CREATE) === TRUE) {
             $files = Storage::allFiles('public');
             foreach ($files as $file) {
-                $zip->addFile(storage_path('app/' . $file), $file);
+                $relativeNameInZipFile = str_replace('public/', '', $file);
+                $zip->addFile(storage_path('app/' . $file), $relativeNameInZipFile);
             }
             $zip->close();
             return response()->download($filePath)->deleteFileAfterSend(true);
@@ -111,6 +97,16 @@ class BackupController extends Controller
             return back()->with('success', 'Data restored successfully.');
         } else {
             return back()->with('error', 'Failed to restore data.');
+        }
+    }
+
+    public function deleteBackup($fileName)
+    {
+        if (Storage::exists('backups/' . $fileName)) {
+            Storage::delete('backups/' . $fileName);
+            return back()->with('success', 'Backup deleted successfully.');
+        } else {
+            return back()->with('error', 'Backup not found.');
         }
     }
 }
