@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Middleware\RedirectIfNotAuthenticated;
 use App\Http\Middleware\LogRequests;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BackupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,4 +62,12 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::resource('user', UserController::class)->except(['show']);
     Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
+});
+// Route untuk Settings
+Route::middleware(['auth'])->group(function () {
+    Route::get('/settings', [BackupController::class, 'index'])->name('settings.index');
+    Route::post('/settings/backup-database', [BackupController::class, 'backupDatabase'])->name('settings.backupDatabase');
+    Route::post('/settings/restore-database', [BackupController::class, 'restoreDatabase'])->name('settings.restoreDatabase');
+    Route::post('/settings/backup-data', [BackupController::class, 'backupData'])->name('settings.backupData');
+    Route::post('/settings/restore-data', [BackupController::class, 'restoreData'])->name('settings.restoreData');
 });

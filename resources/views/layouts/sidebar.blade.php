@@ -28,6 +28,11 @@
                         </a>
                     </li>
                 @endif
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-white {{ Request::routeIs('settings.index') ? 'active' : '' }}" href="{{ route('settings.index') }}">
+                        <i class="fas fa-cogs"></i> Settings
+                    </a>
+                </li>
             </ul>
         </div>
     </div>
