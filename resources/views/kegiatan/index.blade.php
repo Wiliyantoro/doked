@@ -124,6 +124,10 @@
             width: 100%;
             margin-top: 10px;
         }
+        .camera-container button {
+        position: relative;
+        z-index: 999; /* Atur nilai z-index agar lebih tinggi dari elemen video */
+        }
     </style>
 @endpush
 
@@ -156,30 +160,31 @@
             }
         }
 
+        // uncomment pada bagian ini agar tidak duplikat
         // AJAX untuk menambah kegiatan
-        $('#createKegiatanForm').on('submit', function(e) {
-            e.preventDefault();
+        // $('#createKegiatanForm').on('submit', function(e) {
+        //     e.preventDefault();
 
-            $.ajax({
-                url: $(this).attr('action'),
-                method: $(this).attr('method'),
-                data: new FormData(this),
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    if (response.success) {
-                        $('#createKegiatanModal').modal('hide');
-                        alert('Kegiatan berhasil ditambah');
-                        location.reload();
-                    } else {
-                        alert('Terjadi kesalahan, silahkan coba lagi.');
-                    }
-                },
-                error: function(response) {
-                    alert('Terjadi kesalahan, silahkan coba lagi.');
-                }
-            });
-        });
+        //     $.ajax({
+        //         url: $(this).attr('action'),
+        //         method: $(this).attr('method'),
+        //         data: new FormData(this),
+        //         processData: false,
+        //         contentType: false,
+        //         success: function(response) {
+        //             if (response.success) {
+        //                 $('#createKegiatanModal').modal('hide');
+        //                 alert('Kegiatan berhasil ditambah');
+        //                 location.reload();
+        //             } else {
+        //                 alert('Terjadi kesalahan, silahkan coba lagi.');
+        //             }
+        //         },
+        //         error: function(response) {
+        //             alert('Terjadi kesalahan, silahkan coba lagi.');
+        //         }
+        //     });
+        // });
 
         // Show all photos
         $(document).on('click', '.lihat-semua-btn', function() {

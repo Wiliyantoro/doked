@@ -1,5 +1,5 @@
 <div class="modal fade" id="createKegiatanModal" tabindex="-1" aria-labelledby="createKegiatanModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="createKegiatanModalLabel">Tambah Kegiatan</h5>
@@ -34,9 +34,9 @@
                             <button type="button" class="btn btn-secondary mt-2" id="switchCamera">Ganti Kamera</button>
                         </div>
                         <canvas id="canvas" style="display: none;"></canvas>
-                        <div id="cameraPreview" class="d-flex flex-wrap"></div>
+                        <div id="cameraPreview" class="d-flex flex-wrap mt-2"></div>
                     </div>
-                    <div id="previewContainer" class="d-flex flex-wrap"></div>
+                    <div id="previewContainer" class="d-flex flex-wrap mt-2"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -46,6 +46,7 @@
         </div>
     </div>
 </div>
+
 <script>
     let currentStream;
     let video = document.getElementById('camera');
@@ -60,12 +61,41 @@
 
         $('#createKegiatanModal').on('hidden.bs.modal', function () {
             stopCamera();
+            resetForm();
         });
 
         $('#switchCamera').on('click', function() {
             currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
             startCamera();
         });
+
+        // AJAX form submission
+        $('#createKegiatanForm').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            method: $(this).attr('method'),
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    $('#createKegiatanModal').modal('hide');
+                    alert('Kegiatan berhasil ditambah');
+                    location.reload();
+                } else {
+                    // Tampilkan pesan kesalahan dari respons server jika ada
+                    alert(response.message || 'Terjadi kesalahan, silahkan coba lagi.');
+                }
+            },
+            error: function(xhr) {
+                // Tangani kesalahan koneksi atau server
+                alert('Terjadi kesalahan, silahkan coba lagi.');
+            }
+        });
+    });
     });
 
     function startCamera() {
@@ -100,10 +130,10 @@
         img.style.marginRight = '10px';
         cameraPreview.appendChild(img);
 
-        // Simpan gambar ke dalam input file
+        // Simpan gambar ke dalam input hidden
         const input = document.createElement('input');
         input.type = 'hidden';
-        input.name = 'capturedImages[]';
+        input.name = 'camera_photos[]';
         input.value = img.src;
         document.getElementById('createKegiatanForm').appendChild(input);
     }
@@ -125,5 +155,11 @@
             };
             reader.readAsDataURL(files[i]);
         }
+    }
+
+    function resetForm() {
+        document.getElementById('createKegiatanForm').reset();
+        document.getElementById('previewContainer').innerHTML = '';
+        document.getElementById('cameraPreview').innerHTML = '';
     }
 </script>

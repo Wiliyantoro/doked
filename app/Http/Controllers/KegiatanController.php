@@ -39,14 +39,14 @@ class KegiatanController extends Controller
         $kegiatan->nama_kegiatan = $request->nama_kegiatan;
         $kegiatan->rincian_kegiatan = $request->rincian_kegiatan;
         $kegiatan->tanggal_kegiatan = $request->tanggal_kegiatan;
-        $kegiatan->user_id = auth()->id(); 
+        $kegiatan->user_id = auth()->id();
         $kegiatan->save();
     
         if ($request->hasFile('fotos')) {
             foreach ($request->file('fotos') as $foto) {
                 $image = Image::make($foto)->resize(800, null, function ($constraint) {
                     $constraint->aspectRatio();
-                })->encode('jpg', 75); 
+                })->encode('jpg', 75);
     
                 $path = 'foto_kegiatan/' . uniqid() . '.jpg';
                 Storage::disk('public')->put($path, $image);
@@ -66,8 +66,10 @@ class KegiatanController extends Controller
             }
         }
     
-        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil disimpan.');
+        // Mengembalikan respons JSON yang benar
+        return response()->json(['success' => true, 'message' => 'Kegiatan berhasil ditambah'], 200);
     }
+    
 
     public function update(Request $request, $id)
     {
