@@ -32,7 +32,7 @@
                 </div>
             </div>
             {{-- Logout Button Outside Dropdown --}}
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="ml-2">
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="ml-2 d-none d-md-inline">
                 @csrf
                 <button type="submit" class="btn btn-secondary btn-sm">Logout</button>
             </form>

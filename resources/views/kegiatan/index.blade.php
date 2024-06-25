@@ -39,13 +39,24 @@
                         <td>{{ $kegiatan->rincian_kegiatan }}</td>
                         <td>{{ \Carbon\Carbon::parse($kegiatan->tanggal_kegiatan)->locale('id')->isoFormat('D MMMM YYYY') }}</td>
                         <td class="center-image">
-                            @if($kegiatan->fotos->count() > 0)
+                            <div class="foto-wrapper">
+                                @foreach($kegiatan->fotos->take(4) as $foto)
+                                    <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
+                                @endforeach
+                                @if($kegiatan->fotos->count() > 4)
+                                    <div class="lihat-semua">
+                                        <button class="btn btn-link lihat-semua-btn" data-id="{{ $kegiatan->id }}">Lihat Semua</button>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="foto-lengkap" id="foto-lengkap-{{ $kegiatan->id }}" style="display: none;">
                                 @foreach($kegiatan->fotos as $foto)
                                     <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
                                 @endforeach
-                            @else
-                                Tidak ada foto
-                            @endif
+                                <div class="lihat-semua">
+                                    <button class="btn btn-link sembunyikan-semua-btn" data-id="{{ $kegiatan->id }}">Sembunyikan</button>
+                                </div>
+                            </div>
                         </td>
                         <td>{{ $kegiatan->user->name }}</td>
                         <td>
@@ -78,7 +89,45 @@
     @include('kegiatan.confdel') {{-- modal untuk konfirmasi hapus --}} 
 @endsection
 
-@section('scripts')
+@push('styles')
+    <style>
+        .center-image {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+
+        .camera-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .foto-wrapper, .foto-lengkap {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .lihat-semua {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+@endpush
+
+@push('scripts')
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -131,5 +180,20 @@
                 }
             });
         });
+
+        // Show all photos
+        $(document).on('click', '.lihat-semua-btn', function() {
+            var id = $(this).data('id');
+            $('#foto-lengkap-' + id).show();
+            $(this).closest('.foto-wrapper').hide();
+        });
+
+        // Hide all photos
+        $(document).on('click', '.sembunyikan-semua-btn', function() {
+            var id = $(this).data('id');
+            $('#foto-lengkap-' + id).hide();
+            $(this).closest('.foto-lengkap').hide();
+            $('.foto-wrapper[data-id="' + id + '"]').show();
+        });
     </script>
-@endsection
+@endpush

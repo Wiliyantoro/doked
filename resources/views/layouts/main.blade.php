@@ -10,6 +10,9 @@
     <style>
         html, body {
             height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
         }
         body {
             display: flex;
@@ -18,9 +21,13 @@
         .main-content {
             display: flex;
             flex: 1;
+            flex-direction: column;
         }
         .sidebar {
             min-height: 100%;
+            background-color: #343a40;
+            color: white;
+            padding: 15px;
         }
         .content {
             flex: 1;
@@ -31,13 +38,19 @@
             padding: 10px 0;
             text-align: center;
         }
+        @media (min-width: 768px) {
+            .main-content {
+                flex-direction: row;
+            }
+        }
     </style>
+    @stack('styles') <!-- Tempat untuk section styles -->
 </head>
 <body>
     @include('layouts.header') <!-- Memanggil header -->
 
     <div class="main-content">
-        <div class="sidebar bg-dark text-white">
+        <div class="sidebar">
             @include('layouts.sidebar') <!-- Memanggil sidebar -->
         </div>
         <div class="content">
@@ -49,10 +62,8 @@
 
     <!-- Load jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-
     <!-- Load Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
     <!-- Load Bootstrap JavaScript -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 

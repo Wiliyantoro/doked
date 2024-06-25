@@ -7,7 +7,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="{{ route('kegiatan.store') }}" method="POST" enctype="multipart/form-data">
+            <form id="createKegiatanForm" action="{{ route('kegiatan.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
@@ -29,14 +29,14 @@
                     <div class="form-group">
                         <label for="cameraInput">Ambil Foto dengan Kamera</label>
                         <div class="camera-container">
-                            <video id="camera" width="100%" autoplay></video>
+                            <video id="camera" class="w-100" autoplay></video>
                             <button type="button" class="btn btn-primary mt-2" onclick="capturePhoto()">Ambil Foto</button>
                             <button type="button" class="btn btn-secondary mt-2" id="switchCamera">Ganti Kamera</button>
                         </div>
                         <canvas id="canvas" style="display: none;"></canvas>
-                        <div id="cameraPreview"></div>
+                        <div id="cameraPreview" class="d-flex flex-wrap"></div>
                     </div>
-                    <div id="previewContainer"></div>
+                    <div id="previewContainer" class="d-flex flex-wrap"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -73,29 +73,18 @@
             currentStream.getTracks().forEach(track => track.stop());
         }
 
-        const constraints = {
-            video: {
-                facingMode: currentFacingMode
-            }
-        };
-
-        navigator.mediaDevices.getUserMedia(constraints)
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } })
             .then(stream => {
                 currentStream = stream;
                 video.srcObject = stream;
-                video.play();
             })
-            .catch(err => {
-                console.log("An error occurred: " + err);
-            });
+            .catch(err => console.error('Error accessing camera: ', err));
     }
 
     function stopCamera() {
         if (currentStream) {
             currentStream.getTracks().forEach(track => track.stop());
         }
-        video.srcObject = null;
-        document.getElementById('cameraPreview').innerHTML = "";
     }
 
     function capturePhoto() {
@@ -104,33 +93,37 @@
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        const dataURL = canvas.toDataURL('image/png');
         const img = document.createElement('img');
-        img.src = dataURL;
+        img.src = canvas.toDataURL('image/png');
+        img.className = 'img-fluid';
         img.style.maxWidth = '100px';
+        img.style.marginRight = '10px';
         cameraPreview.appendChild(img);
 
+        // Simpan gambar ke dalam input file
         const input = document.createElement('input');
         input.type = 'hidden';
-        input.name = 'camera_photos[]';
-        input.value = dataURL;
-        cameraPreview.appendChild(input);
+        input.name = 'capturedImages[]';
+        input.value = img.src;
+        document.getElementById('createKegiatanForm').appendChild(input);
     }
 
     function previewImages(event, previewContainerId) {
+        const files = event.target.files;
         const previewContainer = document.getElementById(previewContainerId);
         previewContainer.innerHTML = '';
 
-        const files = event.target.files;
-        for (const file of files) {
+        for (let i = 0; i < files.length; i++) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = document.createElement('img');
                 img.src = e.target.result;
+                img.className = 'img-fluid';
                 img.style.maxWidth = '100px';
+                img.style.marginRight = '10px';
                 previewContainer.appendChild(img);
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(files[i]);
         }
     }
 </script>

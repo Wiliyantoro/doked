@@ -5,7 +5,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav flex-column">
+            <ul class="navbar-nav flex-column w-100">
                 <li class="nav-item mb-2">
                     <a class="nav-link text-white {{ Request::routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                         <i class="fas fa-home"></i> Home
