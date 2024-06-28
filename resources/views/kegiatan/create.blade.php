@@ -71,31 +71,35 @@
 
         // AJAX form submission
         $('#createKegiatanForm').on('submit', function(e) {
-        e.preventDefault();
-        var formData = new FormData(this);
-        
-        $.ajax({
-            url: $(this).attr('action'),
-            method: $(this).attr('method'),
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if (response.success) {
-                    $('#createKegiatanModal').modal('hide');
-                    alert('Kegiatan berhasil ditambah');
-                    location.reload();
-                } else {
-                    // Tampilkan pesan kesalahan dari respons server jika ada
-                    alert(response.message || 'Terjadi kesalahan, silahkan coba lagi.');
-                }
-            },
-            error: function(xhr) {
-                // Tangani kesalahan koneksi atau server
-                alert('Terjadi kesalahan, silahkan coba lagi.');
+    e.preventDefault();
+    var formData = new FormData(this);
+
+    // Additional handling for captured photos
+    var cameraPhotos = document.getElementsByName('camera_photos[]');
+    for (var i = 0; i < cameraPhotos.length; i++) {
+        formData.append('camera_photos[]', cameraPhotos[i].value);
+    }
+
+    $.ajax({
+        url: $(this).attr('action'),
+        method: $(this).attr('method'),
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                $('#createKegiatanModal').modal('hide');
+                alert('Kegiatan berhasil ditambah');
+                location.reload();
+            } else {
+                alert(response.message || 'Terjadi kesalahan, silahkan coba lagi.');
             }
-        });
+        },
+        error: function(xhr) {
+            alert('Terjadi kesalahan, silahkan coba lagi.');
+        }
     });
+});
     });
 
     function startCamera() {

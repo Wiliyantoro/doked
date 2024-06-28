@@ -1,3 +1,4 @@
+<!-- resources/views/kegiatan/index.blade.php -->
 @extends('layouts.main')
 
 @section('title', 'Daftar Kegiatan')
@@ -40,11 +41,22 @@
                         <td>{{ \Carbon\Carbon::parse($kegiatan->tanggal_kegiatan)->locale('id')->isoFormat('D MMMM YYYY') }}</td>
                         <td class="center-image">
                             <div class="foto-wrapper">
-                                @foreach($kegiatan->fotos as $foto)
-                                    <a href="{{ url('storage/' . $foto->nama_file) }}" data-lightbox="kegiatan{{ $kegiatan->id }}">
-                                        <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
-                                    </a>
+                                @foreach($kegiatan->fotos->take(4) as $foto)
+                                    <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" class="photo-thumbnail" data-photos="{{ json_encode($kegiatan->fotos->pluck('nama_file')) }}" data-index="{{ $loop->index }}" style="max-width: 100px; cursor: pointer;">
                                 @endforeach
+                                @if($kegiatan->fotos->count() > 4)
+                                    <div class="lihat-semua">
+                                        <button class="btn btn-link lihat-semua-btn" data-id="{{ $kegiatan->id }}">Lihat Semua</button>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="foto-lengkap" id="foto-lengkap-{{ $kegiatan->id }}" style="display: none;">
+                                @foreach($kegiatan->fotos as $foto)
+                                    <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
+                                @endforeach
+                                <div class="lihat-semua">
+                                    <button class="btn btn-link sembunyikan-semua-btn" data-id="{{ $kegiatan->id }}">Sembunyikan</button>
+                                </div>
                             </div>
                         </td>
                         <td>{{ $kegiatan->user->name }}</td>
@@ -76,51 +88,132 @@
 
     @include('kegiatan.create')
     @include('kegiatan.confdel') {{-- modal untuk konfirmasi hapus --}} 
+    @include('kegiatan.photo_modal') {{-- modal untuk menampilkan foto --}}
 @endsection
 
 @push('styles')
-    <!-- CSS Lightbox2 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css">
+    <style>
+        .center-image {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+
+        .camera-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .foto-wrapper, .foto-lengkap {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .lihat-semua {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .camera-container button {
+        position: relative;
+        z-index: 999; /* Atur nilai z-index agar lebih tinggi dari elemen video */
+        }
+        .modal-content-1 {
+        background-color: rgba(255, 255, 255, 0.8); /* Warna putih dengan opacity 80% */
+        border: 1px solid #e0e0e0; /* Garis tepi modal */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Bayangan di sekitar modal */
+        }
+    </style>
 @endpush
 
 @push('scripts')
-    <!-- JavaScript Lightbox2 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox-plus-jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        $(document).ready(function(){
-            // Initialize Lightbox2
-            lightbox.option({
-                'resizeDuration': 200,
-                'wrapAround': true,
-                'alwaysShowNavOnTouchDevices': true,
-                'disableScrolling': true // Menonaktifkan pengguliran ketika lightbox terbuka
-            });
-    
-            // Menambahkan tombol unduh dan cetak
-            $('.lightbox').append('<div class="button-container">' +
-                '<button class="lightbox-download btn btn-primary mr-2">Unduh</button>' +
-                '<button class="lightbox-print btn btn-secondary" onclick="printImage()">Cetak</button>' +
-                '</div>');
-    
-            // Menangani klik tombol unduh
-            $(document).on('click', '.lightbox-download', function(e){
-                e.preventDefault();
-                var imageUrl = $('.lb-image').attr('src');
-                window.location.href = imageUrl;
+        $(document).ready(function() {
+            $('.photo-thumbnail').click(function() {
+                var photos = JSON.parse($(this).attr('data-photos'));
+                var index = $(this).attr('data-index');
+                
+                $('#modalImage').attr('src', '/storage/' + photos[index]);
+                $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
+                $('#photoModal').modal('show');
+                
+                $('#prevPhoto').click(function() {
+                    index = (index + photos.length - 1) % photos.length;
+                    $('#modalImage').attr('src', '/storage/' + photos[index]);
+                    $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
+                });
+                
+                $('#nextPhoto').click(function() {
+                    index = (index + 1) % photos.length;
+                    $('#modalImage').attr('src', '/storage/' + photos[index]);
+                    $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
+                });
+                
+                $('#printPhoto').click(function() {
+                    var printWindow = window.open('', '_blank');
+                    printWindow.document.open();
+                    printWindow.document.write('<html><body style="text-align:center;"><img src="/storage/' + photos[index] + '" style="max-width:100%;"></body></html>');
+                    printWindow.document.close();
+                    printWindow.focus();
+                    printWindow.print();
+                    printWindow.close();
+                });
             });
         });
-    
-        // Fungsi cetak
-        function printImage() {
-            var imageUrl = $('.lb-image').attr('src');
-            var printWindow = window.open('', '_blank');
-            printWindow.document.write('<html><head><title>Cetak Gambar</title></head><body><img src="' + imageUrl + '" style="max-width:100%;"></body></html>');
-            printWindow.document.close();
-            printWindow.onload = function() {
-                printWindow.print();
-            };
-        }
     </script>
-    
-    
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        });
+
+        function previewImages(event, previewId) {
+            var files = event.target.files;
+            var output = document.getElementById(previewId);
+            output.innerHTML = '';
+
+            for (var i = 0; i < files.length; i++) {
+                var reader = new FileReader();
+                reader.onload = (function(file) {
+                    return function(e) {
+                        var img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.style.maxWidth = '100px';
+                        img.style.marginRight = '10px';
+                        output.appendChild(img);
+                    };
+                })(files[i]);
+                reader.readAsDataURL(files[i]);
+            }
+        }
+
+        // Show all photos
+        $(document).on('click', '.lihat-semua-btn', function() {
+            var id = $(this).data('id');
+            $('#foto-lengkap-' + id).show();
+            $(this).closest('.foto-wrapper').hide();
+        });
+
+        // Hide all photos
+        $(document).on('click', '.sembunyikan-semua-btn', function() {
+            var id = $(this).data('id');
+            $('#foto-lengkap-' + id).hide();
+            $(this).closest('.foto-lengkap').hide();
+            $('.foto-wrapper[data-id="' + id + '"]').show();
+        });
+    </script>
 @endpush
