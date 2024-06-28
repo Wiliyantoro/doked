@@ -59,15 +59,15 @@
                 @if($page->count() == 3)
                     <tr>
                         <td class="photo-cell">
-                            <img src="{{ asset('storage/' . $page[0]->nama_file) }}" alt="Foto Kegiatan">
+                            <img src="{{ url('storage/' . $page[0]->nama_file) }}" alt="Foto Kegiatan">
                         </td>
                         <td class="photo-cell">
-                            <img src="{{ asset('storage/' . $page[1]->nama_file) }}" alt="Foto Kegiatan">
+                            <img src="{{ url('storage/' . $page[1]->nama_file) }}" alt="Foto Kegiatan">
                         </td>
                     </tr>
                     <tr>
                         <td class="photo-cell" colspan="2" style="text-align: center;">
-                            <img src="{{ asset('storage/' . $page[2]->nama_file) }}" alt="Foto Kegiatan">
+                            <img src="{{ url('storage/' . $page[2]->nama_file) }}" alt="Foto Kegiatan">
                         </td>
                     </tr>
                 @else
@@ -75,7 +75,7 @@
                         <tr>
                             @foreach ($row as $foto)
                                 <td class="photo-cell">
-                                    <img src="{{ asset('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan">
+                                    <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan">
                                 </td>
                             @endforeach
                             @if($row->count() < 2)
