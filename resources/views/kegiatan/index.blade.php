@@ -137,83 +137,150 @@
         }
     </style>
 @endpush
+@push('styles')
+<style>
+    .image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        height: 500px; /* Fixed height for the container */
+        width: 100%;
+        position: relative;
+    }
 
+    .image-container img {
+        transition: transform 0.3s ease, width 0.3s ease, height 0.3s ease;
+        max-width: 100%;
+        max-height: 100%;
+    }
+</style>
+@endpush
 @push('scripts')
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('.photo-thumbnail').click(function() {
-                var photos = JSON.parse($(this).attr('data-photos'));
-                var index = $(this).attr('data-index');
-                
-                $('#modalImage').attr('src', '/storage/' + photos[index]);
-                $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
-                $('#photoModal').modal('show');
-                
-                $('#prevPhoto').click(function() {
-                    index = (index + photos.length - 1) % photos.length;
-                    $('#modalImage').attr('src', '/storage/' + photos[index]);
-                    $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
-                });
-                
-                $('#nextPhoto').click(function() {
-                    index = (index + 1) % photos.length;
-                    $('#modalImage').attr('src', '/storage/' + photos[index]);
-                    $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
-                });
-                
-                $('#printPhoto').click(function() {
-                    var printWindow = window.open('', '_blank');
-                    printWindow.document.open();
-                    printWindow.document.write('<html><body style="text-align:center;"><img src="/storage/' + photos[index] + '" style="max-width:100%;"></body></html>');
-                    printWindow.document.close();
-                    printWindow.focus();
-                    printWindow.print();
-                    printWindow.close();
-                });
-            });
-        });
-    </script>
-    <script>
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.photo-thumbnail').click(function() {
+        var photos = JSON.parse($(this).attr('data-photos'));
+        var index = $(this).attr('data-index');
+        var rotation = 0;
+
+        $('#modalImage').attr('src', '/storage/' + photos[index]);
+        $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
+        $('#modalImage').css('transform', 'rotate(0deg)');
+        $('#photoModal').modal('show');
+        adjustImageSize(rotation);
+
+        $('#prevPhoto').off().click(function() {
+            index = (index + photos.length - 1) % photos.length;
+            $('#modalImage').attr('src', '/storage/' + photos[index]);
+            $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
+            rotation = 0;
+            $('#modalImage').css('transform', 'rotate(0deg)');
+            adjustImageSize(rotation);
         });
 
-        function previewImages(event, previewId) {
-            var files = event.target.files;
-            var output = document.getElementById(previewId);
-            output.innerHTML = '';
+        $('#nextPhoto').off().click(function() {
+            index = (index + 1) % photos.length;
+            $('#modalImage').attr('src', '/storage/' + photos[index]);
+            $('#downloadPhoto').attr('href', '/storage/' + photos[index]);
+            rotation = 0;
+            $('#modalImage').css('transform', 'rotate(0deg)');
+            adjustImageSize(rotation);
+        });
 
-            for (var i = 0; i < files.length; i++) {
-                var reader = new FileReader();
-                reader.onload = (function(file) {
-                    return function(e) {
-                        var img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.style.maxWidth = '100px';
-                        img.style.marginRight = '10px';
-                        output.appendChild(img);
-                    };
-                })(files[i]);
-                reader.readAsDataURL(files[i]);
+        $('#rotateLeft').off().click(function() {
+            rotation -= 90;
+            $('#modalImage').css('transform', 'rotate(' + rotation + 'deg)');
+            adjustImageSize(rotation);
+        });
+
+        $('#rotateRight').off().click(function() {
+            rotation += 90;
+            $('#modalImage').css('transform', 'rotate(' + rotation + 'deg)');
+            adjustImageSize(rotation);
+        });
+
+        $('#printPhoto').off().click(function() {
+            var printWindow = window.open('', '_blank');
+            printWindow.document.open();
+            printWindow.document.write('<html><body style="text-align:center;"><img src="/storage/' + photos[index] + '" style="max-width:100%; transform: rotate(' + rotation + 'deg);"></body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        });
+
+        function adjustImageSize(rotation) {
+            var img = $('#modalImage');
+            var container = $('.image-container');
+            var containerWidth = container.width();
+            var containerHeight = container.height();
+            var imgWidth = img[0].naturalWidth;
+            var imgHeight = img[0].naturalHeight;
+            var imgAspect = imgWidth / imgHeight;
+            var containerAspect = containerWidth / containerHeight;
+
+            if (rotation % 180 !== 0) {
+                imgAspect = 1 / imgAspect;
+            }
+
+            if (imgAspect > containerAspect) {
+                img.css({
+                    'width': rotation % 180 === 0 ? 'auto' : '100%',
+                    'height': rotation % 180 === 0 ? '100%' : 'auto'
+                });
+            } else {
+                img.css({
+                    'width': rotation % 180 === 0 ? '100%' : 'auto',
+                    'height': rotation % 180 === 0 ? 'auto' : '100%'
+                });
             }
         }
+    });
+});
 
-        // Show all photos
-        $(document).on('click', '.lihat-semua-btn', function() {
-            var id = $(this).data('id');
-            $('#foto-lengkap-' + id).show();
-            $(this).closest('.foto-wrapper').hide();
-        });
+</script>
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    });
 
-        // Hide all photos
-        $(document).on('click', '.sembunyikan-semua-btn', function() {
-            var id = $(this).data('id');
-            $('#foto-lengkap-' + id).hide();
-            $(this).closest('.foto-lengkap').hide();
-            $('.foto-wrapper[data-id="' + id + '"]').show();
-        });
-    </script>
+    function previewImages(event, previewId) {
+        var files = event.target.files;
+        var output = document.getElementById(previewId);
+        output.innerHTML = '';
+
+        for (var i = 0; i < files.length; i++) {
+            var reader = new FileReader();
+            reader.onload = (function(file) {
+                return function(e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.maxWidth = '100px';
+                    img.style.marginRight = '10px';
+                    output.appendChild(img);
+                };
+            })(files[i]);
+            reader.readAsDataURL(files[i]);
+        }
+    }
+
+    // Show all photos
+    $(document).on('click', '.lihat-semua-btn', function() {
+        var id = $(this).data('id');
+        $('#foto-lengkap-' + id).show();
+        $(this).closest('.foto-wrapper').hide();
+    });
+
+    // Hide all photos
+    $(document).on('click', '.sembunyikan-semua-btn', function() {
+        var id = $(this).data('id');
+        $('#foto-lengkap-' + id).hide();
+        $(this).closest('.foto-lengkap').hide();
+        $('.foto-wrapper[data-id="' + id + '"]').show();
+    });
+</script>
 @endpush

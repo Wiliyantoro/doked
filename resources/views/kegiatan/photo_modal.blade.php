@@ -9,11 +9,15 @@
                 </button>
             </div>
             <div class="modal-body text-center">
-                <img id="modalImage" src="" class="img-fluid">
+                <div class="image-container">
+                    <img id="modalImage" src="" class="img-fluid" style="transform: rotate(0deg);">
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="prevPhoto">Previous</button>
                 <button type="button" class="btn btn-secondary" id="nextPhoto">Next</button>
+                <button type="button" class="btn btn-secondary" id="rotateLeft">Rotate Left</button>
+                <button type="button" class="btn btn-secondary" id="rotateRight">Rotate Right</button>
                 <a href="" id="downloadPhoto" class="btn btn-primary" download>Download</a>
                 <button type="button" class="btn btn-success" id="printPhoto">Print</button>
                 <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
