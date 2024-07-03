@@ -21,6 +21,11 @@
                         <i class="fas fa-user"></i> Profil Saya
                     </a>
                 </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link text-white {{ Request::routeIs('regulations.index') ? 'active' : '' }}" href="{{ route('regulations.index') }}">
+                        <i class="fas fa-gavel"></i> Peraturan
+                    </a>
+                </li>
                 @if(Auth::user()->level == 1)
                     <li class="nav-item mb-2">
                         <a class="nav-link text-white {{ Request::routeIs('user.index') ? 'active' : '' }}" href="{{ route('user.index') }}">
