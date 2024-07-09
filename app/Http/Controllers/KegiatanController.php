@@ -6,26 +6,30 @@ use Illuminate\Http\Request;
 use App\Models\Kegiatan;
 use App\Models\Foto;
 use PDF;
-use Illuminate\Support\Facades\Storage; // Import Storage facade
+use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 
 class KegiatanController extends Controller
 {
     public function index()
     {
-        //dd('KegiatanController@index: Accessing kegiatan index');
-        
         $userLevel = auth()->user()->level;
         if ($userLevel == 1) {
             $kegiatans = Kegiatan::all();
         } else {
             $kegiatans = Kegiatan::where('user_id', auth()->id())->get();
         }
-        //Log::info('KegiatanController@index: Accessing kegiatan index');
-        //dd($kegiatans);
-        return view('kegiatan.index', compact('kegiatans'));
+
+        return view('kegiatan.index', compact('kegiatans', 'userLevel'));
     }
 
+    public function edit($id)
+    {
+        $kegiatan = Kegiatan::findOrFail($id);
+        return view('kegiatan.edit', compact('kegiatan'));
+    }
+
+  
     public function store(Request $request)
     {
         $request->validate([
@@ -73,112 +77,180 @@ class KegiatanController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validatedData = $request->validate([
-            'nama_kegiatan' => 'required|max:255',
+        $request->validate([
+            'nama_kegiatan' => 'required',
             'rincian_kegiatan' => 'required',
             'tanggal_kegiatan' => 'required|date',
-            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Sesuaikan kebutuhan
+            'replaced_fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            'camera_photos.*' => 'nullable|string', // validasi untuk base64
+            'fotos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // Validasi untuk foto baru
         ]);
-
+    
         $kegiatan = Kegiatan::findOrFail($id);
-
-        // Memeriksa apakah pengguna memiliki akses untuk mengedit kegiatan
-        if (!$this->hasAccess($kegiatan)) {
-            abort(403, 'Anda tidak memiliki akses untuk mengedit kegiatan ini.');
-        }
-
-        $kegiatan->update($request->except('fotos'));
-
-        if ($request->hasFile('fotos')) {
-            foreach ($request->file('fotos') as $foto) {
-                // Resize dan kompresi gambar
-                $image = Image::make($foto)->resize(800, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                })->encode('jpg', 75); // Kompresi gambar dengan kualitas 75%
-
-                // Simpan gambar yang telah diresize
-                $path = $foto->store('foto_kegiatan', 'public');
-
-                // Buat model Foto dan simpan ke database
-                $kegiatan->fotos()->create([
-                    'nama_file' => $path
-                ]);
+    
+        // Update data kegiatan
+        $kegiatan->nama_kegiatan = $request->nama_kegiatan;
+        $kegiatan->rincian_kegiatan = $request->rincian_kegiatan;
+        $kegiatan->tanggal_kegiatan = $request->tanggal_kegiatan;
+        $kegiatan->save();
+    
+        // Mengganti foto lama dengan foto baru dari input file
+        if ($request->hasFile('replaced_fotos')) {
+            foreach ($request->file('replaced_fotos') as $fotoId => $file) {
+                $this->replaceFoto($fotoId, $file, $kegiatan->id);
             }
         }
-
-        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil diedit.');
+    
+        // Mengganti foto lama dengan foto baru dari kamera (base64)
+        if ($request->has('camera_photos')) {
+            foreach ($request->camera_photos as $fotoId => $base64Image) {
+                if ($base64Image) { // Pastikan base64Image tidak kosong
+                    $this->replaceFotoBase64($fotoId, $base64Image, $kegiatan->id);
+                }
+            }
+        }
+            // Menyimpan foto baru dari new-photos-preview
+        if ($request->has('fotos')) {
+        foreach ($request->fotos as $photo) {
+            $this->saveNewPhoto($photo, $kegiatan->id);
+        }
     }
+    
+        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil diupdate.');
+    }
+    
+    private function replaceFoto($fotoId, $file, $kegiatanId)
+    {
+        // Hapus foto lama
+        $foto = Foto::findOrFail($fotoId);
+        $path = storage_path('app/public/' . $foto->nama_file);
+        if (file_exists($path)) {
+            unlink($path);
+        }
+        $foto->delete();
+    
+        // Simpan foto baru di storage
+        $newPath = 'foto_kegiatan/' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $image = Image::make($file)->resize(800, null, function ($constraint) {
+            $constraint->aspectRatio();
+        })->encode('jpg', 75);
+        Storage::disk('public')->put($newPath, $image);
+    
+        // Tambahkan record baru ke database
+        Foto::create([
+            'kegiatan_id' => $kegiatanId,
+            'nama_file' => $newPath,
+        ]);
+    }
+    
+    private function replaceFotoBase64($fotoId, $base64Image, $kegiatanId)
+    {
+        // Hapus foto lama
+        $foto = Foto::findOrFail($fotoId);
+        $path = storage_path('app/public/' . $foto->nama_file);
+        if (file_exists($path)) {
+            unlink($path);
+        }
+        $foto->delete();
+    
+        // Decode base64 image
+        $image = Image::make($base64Image)->resize(800, null, function ($constraint) {
+            $constraint->aspectRatio();
+        })->encode('jpg', 75);
+    
+        // Simpan foto baru di storage
+        $newPath = 'foto_kegiatan/' . uniqid() . '.jpg';
+        Storage::disk('public')->put($newPath, $image);
+    
+        // Tambahkan record baru ke database
+        Foto::create([
+            'kegiatan_id' => $kegiatanId,
+            'nama_file' => $newPath,
+        ]);
+    }
+
+    private function saveNewPhoto($base64Image, $kegiatanId)
+    {
+        // Decode base64 image
+        $image = Image::make($base64Image)->resize(800, null, function ($constraint) {
+            $constraint->aspectRatio();
+        })->encode('jpg', 75);
+
+        // Simpan foto baru di storage
+        $newPath = 'foto_kegiatan/' . uniqid() . '.jpg';
+        Storage::disk('public')->put($newPath, $image);
+
+        // Tambahkan record baru ke database
+        Foto::create([
+            'kegiatan_id' => $kegiatanId,
+            'nama_file' => $newPath,
+        ]);
+    }
+    
 
     public function print($id)
     {
         set_time_limit(300);
         $kegiatan = Kegiatan::findOrFail($id);
         $fotos = $kegiatan->fotos;
-    
-        // Mengoptimalkan gambar sebelum membuat PDF
+
         foreach ($fotos as $foto) {
             $this->optimizeImage(storage_path('app/public/' . $foto->nama_file));
         }
-    
+
         $pdf = PDF::loadView('kegiatan.print', compact('kegiatan', 'fotos'));
         return $pdf->stream('kegiatan-'.$kegiatan->id.'.pdf');
     }
-    
+
+    public function destroy($id)
+    {
+        $kegiatan = Kegiatan::findOrFail($id);
+
+        foreach ($kegiatan->fotos as $foto) {
+            $fotoPath = storage_path('app/public/' . $foto->nama_file);
+
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+            }
+
+            $foto->delete();
+        }
+
+        $kegiatan->delete();
+
+        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil dihapus.');
+    }
+
+    public function deleteFoto($id)
+    {
+        $foto = Foto::findOrFail($id);
+
+        $path = storage_path('app/public/' . $foto->nama_file);
+
+        // Hapus dari storage
+        if (file_exists($path)) {
+            unlink($path);
+        }
+
+        // Hapus dari database
+        $foto->delete();
+
+        // Mengirim response JSON yang sukses
+        return response()->json(['message' => 'Foto berhasil dihapus'], 200);
+    }
+
+
     private function optimizeImage($path)
     {
         $img = Image::make($path);
-    
-        // Ubah ukuran gambar jika terlalu besar
+
         if ($img->width() > 1200) {
             $img->resize(1200, null, function ($constraint) {
                 $constraint->aspectRatio();
             });
         }
-    
-        $img->save($path, 75); // Simpan gambar dengan kualitas 75%
-    }
 
-    public function destroy($id)
-    {
-        // Temukan kegiatan berdasarkan ID atau lemparkan pengecualian jika tidak ditemukan
-        $kegiatan = Kegiatan::findOrFail($id);
-    
-        // Memeriksa apakah pengguna memiliki akses untuk menghapus kegiatan
-        if (!$this->hasAccess($kegiatan)) {
-            abort(403, 'Anda tidak memiliki akses untuk menghapus kegiatan ini.');
-        }
-    
-        // Hapus setiap foto terkait dengan kegiatan
-        foreach ($kegiatan->fotos as $foto) {
-            // Dapatkan path lengkap ke foto
-            $fotoPath = storage_path('app/public/' . $foto->nama_file);
-    
-            // Hapus file foto jika ada
-            if (file_exists($fotoPath)) {
-                unlink($fotoPath);
-            }
-    
-            // Hapus record foto dari database
-            $foto->delete();
-        }
-    
-        // Hapus kegiatan dari database
-        $kegiatan->delete();
-    
-        // Redirect kembali ke halaman index dengan pesan sukses
-        return redirect()->route('kegiatan.index')->with('success', 'Kegiatan berhasil dihapus.');
-    }
-
-    // Tambahkan fungsi berikut untuk mengecek apakah pengguna memiliki akses ke kegiatan tertentu
-    private function hasAccess($kegiatan)
-    {
-        $userLevel = auth()->user()->level;
-        if ($userLevel == 1) {
-            // Jika pengguna adalah administrator, beri akses ke semua kegiatan
-            return true;
-        } else {
-            // Jika pengguna adalah pengguna biasa, periksa apakah kegiatan dibuat oleh pengguna itu sendiri
-            return $kegiatan->user_id == auth()->id();
-        }
+        $img->save($path, 75);
     }
 }
+

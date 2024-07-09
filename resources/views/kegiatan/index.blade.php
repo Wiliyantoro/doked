@@ -1,141 +1,139 @@
-<!-- resources/views/kegiatan/index.blade.php -->
 @extends('layouts.main')
 
 @section('title', 'Daftar Kegiatan')
 
 @section('content')
-    <div class="container mt-5">
-        <h1 class="mb-4">Daftar Kegiatan</h1>
-        <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#createKegiatanModal">
-            Tambah Kegiatan
-        </button>
-        
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        @endif
+<div class="container mt-5">
+    <h1 class="mb-4">Daftar Kegiatan</h1>
+    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#createKegiatanModal">
+        Tambah Kegiatan
+    </button>
 
-        <table class="table table-bordered">
-            <thead>
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Nama Kegiatan</th>
+                <th>Rincian Kegiatan</th>
+                <th>Tanggal Kegiatan</th>
+                <th>Foto</th>
+                <th>Dibuat oleh</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $no = 1; @endphp
+            @foreach($kegiatans as $kegiatan)
                 <tr>
-                    <th>No</th>
-                    <th>Nama Kegiatan</th>
-                    <th>Rincian Kegiatan</th>
-                    <th>Tanggal Kegiatan</th>
-                    <th>Foto</th>
-                    <th>Dibuat oleh</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @php $no = 1; @endphp
-                @foreach($kegiatans as $kegiatan)
-                    <tr>
-                        <td>{{ $no++ }}</td>
-                        <td>{{ $kegiatan->nama_kegiatan }}</td>
-                        <td>{{ $kegiatan->rincian_kegiatan }}</td>
-                        <td>{{ \Carbon\Carbon::parse($kegiatan->tanggal_kegiatan)->locale('id')->isoFormat('D MMMM YYYY') }}</td>
-                        <td class="center-image">
-                            <div class="foto-wrapper">
-                                @foreach($kegiatan->fotos->take(4) as $foto)
-                                    <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" class="photo-thumbnail" data-photos="{{ json_encode($kegiatan->fotos->pluck('nama_file')) }}" data-index="{{ $loop->index }}" style="max-width: 100px; cursor: pointer;">
-                                @endforeach
-                                @if($kegiatan->fotos->count() > 4)
-                                    <div class="lihat-semua">
-                                        <button class="btn btn-link lihat-semua-btn" data-id="{{ $kegiatan->id }}">Lihat Semua</button>
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="foto-lengkap" id="foto-lengkap-{{ $kegiatan->id }}" style="display: none;">
-                                @foreach($kegiatan->fotos as $foto)
-                                    <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
-                                @endforeach
+                    <td>{{ $no++ }}</td>
+                    <td>{{ $kegiatan->nama_kegiatan }}</td>
+                    <td>{{ $kegiatan->rincian_kegiatan }}</td>
+                    <td>{{ \Carbon\Carbon::parse($kegiatan->tanggal_kegiatan)->locale('id')->isoFormat('D MMMM YYYY') }}</td>
+                    <td class="center-image">
+                        <div class="foto-wrapper">
+                            @foreach($kegiatan->fotos->take(4) as $foto)
+                                <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" class="photo-thumbnail" data-photos="{{ json_encode($kegiatan->fotos->pluck('nama_file')) }}" data-index="{{ $loop->index }}" style="max-width: 100px; cursor: pointer;">
+                            @endforeach
+                            @if($kegiatan->fotos->count() > 4)
                                 <div class="lihat-semua">
-                                    <button class="btn btn-link sembunyikan-semua-btn" data-id="{{ $kegiatan->id }}">Sembunyikan</button>
+                                    <button class="btn btn-link lihat-semua-btn" data-id="{{ $kegiatan->id }}">Lihat Semua</button>
                                 </div>
+                            @endif
+                        </div>
+                        <div class="foto-lengkap" id="foto-lengkap-{{ $kegiatan->id }}" style="display: none;">
+                            @foreach($kegiatan->fotos as $foto)
+                                <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
+                            @endforeach
+                            <div class="lihat-semua">
+                                <button class="btn btn-link sembunyikan-semua-btn" data-id="{{ $kegiatan->id }}">Sembunyikan</button>
                             </div>
-                        </td>
-                        <td>{{ $kegiatan->user->name }}</td>
-                        <td>
-                            @if($kegiatan->user_id == auth()->id() || Auth::user()->level == 2)
-                                <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#editKegiatanModal{{ $kegiatan->id }}">
-                                    Edit
-                                </button>
-                            @endif
-                            @if(Auth::user()->level == 1 || Auth::user()->level == 2)
-                                <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="{{ $kegiatan->id }}">
-                                    Hapus
-                                </button>
-                                <form id="deleteForm{{ $kegiatan->id }}" action="{{ route('kegiatan.destroy', $kegiatan->id) }}" method="POST" style="display: none;">
-                                    @csrf
-                                    @method('DELETE')
-                                </form>
-                                <a href="{{ route('kegiatan.print', $kegiatan->id) }}" class="btn btn-info btn-sm" target="_blank">
-                                    Cetak
-                                </a>
-                            @endif
-                        </td>
-                    </tr>
-                    @include('kegiatan.edit', ['kegiatan' => $kegiatan])
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+                        </div>
+                    </td>
+                    <td>{{ $kegiatan->user->name }}</td>
+                    <td>
+                        @if($kegiatan->user_id == auth()->id() || Auth::user()->level == 2)
+                            <a href="{{ route('kegiatan.edit', $kegiatan->id) }}" class="btn btn-warning btn-sm">
+                                Edit
+                            </a>
+                        @endif
+                        @if(Auth::user()->level == 1 || Auth::user()->level == 2)
+                            <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="{{ $kegiatan->id }}">
+                                Hapus
+                            </button>
+                            <form id="deleteForm{{ $kegiatan->id }}" action="{{ route('kegiatan.destroy', $kegiatan->id) }}" method="POST" style="display: none;">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                            <a href="{{ route('kegiatan.print', $kegiatan->id) }}" class="btn btn-info btn-sm" target="_blank">
+                                Cetak
+                            </a>
+                        @endif
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
 
-    @include('kegiatan.create')
-    @include('kegiatan.confdel') {{-- modal untuk konfirmasi hapus --}} 
-    @include('kegiatan.photo_modal') {{-- modal untuk menampilkan foto --}}
+@include('kegiatan.create')
+@include('kegiatan.confdel') {{-- modal untuk konfirmasi hapus --}}
+@include('kegiatan.photo_modal') {{-- modal untuk menampilkan foto --}}
 @endsection
 
 @push('styles')
-    <style>
-        .center-image {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+<style>
+    .center-image {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 
-        .camera-container {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-        }
-
-        .camera-container video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .foto-wrapper, .foto-lengkap {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .lihat-semua {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .camera-container button {
+    .camera-container {
         position: relative;
-        z-index: 999; /* Atur nilai z-index agar lebih tinggi dari elemen video */
-        }
-        .modal-content-1 {
-        background-color: rgba(255, 255, 255, 0.8); /* Warna putih dengan opacity 80% */
-        border: 1px solid #e0e0e0; /* Garis tepi modal */
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Bayangan di sekitar modal */
-        }
-    </style>
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    }
+
+    .camera-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .foto-wrapper, .foto-lengkap {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .lihat-semua {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .camera-container button {
+    position: relative;
+    z-index: 999; /* Atur nilai z-index agar lebih tinggi dari elemen video */
+    }
+    .modal-content-1 {
+    background-color: rgba(255, 255, 255, 0.8); /* Warna putih dengan opacity 80% */
+    border: 1px solid #e0e0e0; /* Garis tepi modal */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Bayangan di sekitar modal */
+    }
+</style>
 @endpush
 @push('styles')
 <style>

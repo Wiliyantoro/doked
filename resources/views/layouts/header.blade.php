@@ -1,13 +1,6 @@
 <header class="header bg-light">
     <div class="container-fluid d-flex justify-content-between align-items-center">
-        {{-- Breadcrumbs --}}
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                @yield('breadcrumbs')
-            </ol>
-        </nav>
-
-        {{-- User Profile Info --}}
+            {{-- User Profile Info --}}
         <div class="d-flex align-items-center ml-auto">
             {{-- User Name --}}
             <span>{{ Auth::user()->name }}</span>

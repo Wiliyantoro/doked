@@ -33,14 +33,18 @@ Route::middleware([RedirectIfNotAuthenticated::class])->group(function () {
     // Route untuk dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Route untuk kegiatan
-    Route::prefix('kegiatan')->group(function () {
-        Route::get('/', [KegiatanController::class, 'index'])->name('kegiatan.index');
-        Route::post('/store', [KegiatanController::class, 'store'])->name('kegiatan.store');
-        Route::put('/{id}', [KegiatanController::class, 'update'])->name('kegiatan.update');
-        Route::delete('/{id}', [KegiatanController::class, 'destroy'])->name('kegiatan.destroy');
-        Route::get('/print/{id}', [KegiatanController::class, 'print'])->name('kegiatan.print');
-    });
+        // Route untuk kegiatan
+        Route::prefix('kegiatan')->group(function () {
+            Route::get('/', [KegiatanController::class, 'index'])->name('kegiatan.index');
+            Route::post('/store', [KegiatanController::class, 'store'])->name('kegiatan.store');
+            Route::get('/edit/{id}', [KegiatanController::class, 'edit'])->name('kegiatan.edit');
+            Route::put('/update/{id}', [KegiatanController::class, 'update'])->name('kegiatan.update');
+            Route::delete('/destroy/{id}', [KegiatanController::class, 'destroy'])->name('kegiatan.destroy');
+            Route::get('/print/{id}', [KegiatanController::class, 'print'])->name('kegiatan.print');
+            Route::delete('/foto/{id}', [KegiatanController::class, 'deleteFoto'])->name('kegiatan.foto.delete');
+            Route::delete('/deletePhoto/{id}', [KegiatanController::class, 'deletePhoto'])->name('kegiatan.deletePhoto');
+        });
+
 
     // Route untuk peraturan
     Route::prefix('peraturan')->group(function () {

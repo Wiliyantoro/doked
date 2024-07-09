@@ -1,130 +1,267 @@
-<div class="modal fade" id="editKegiatanModal{{ $kegiatan->id }}" tabindex="-1" aria-labelledby="editKegiatanModalLabel{{ $kegiatan->id }}" aria-hidden="true">
-    <div class="modal-dialog">
+@extends('layouts.main')
+
+@section('title', 'Edit Kegiatan')
+
+@section('content')
+<div class="container mt-5">
+    <h1 class="mb-4">Edit Kegiatan</h1>
+
+    @if(session('message'))
+        <div class="alert alert-{{ session('message')['type'] }} alert-dismissible fade show" role="alert">
+            {{ session('message')['text'] }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    <div id="new-photos-preview" class="mb-3">
+        <h5>Preview Foto Baru</h5>
+    
+        @if (!empty($kegiatan->new_photos))
+            @foreach($kegiatan->new_photos as $photo)
+                <input type="hidden" name="new_photos[]" value="{{ $photo }}">
+            @endforeach
+        @endif
+    </div>
+
+    <form action="{{ route('kegiatan.update', $kegiatan->id) }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')
+        <div class="form-group">
+            <label for="nama_kegiatan">Nama Kegiatan</label>
+            <input type="text" class="form-control" id="nama_kegiatan" name="nama_kegiatan" value="{{ $kegiatan->nama_kegiatan }}" required>
+        </div>
+        <div class="form-group">
+            <label for="rincian_kegiatan">Rincian Kegiatan</label>
+            <textarea class="form-control" id="rincian_kegiatan" name="rincian_kegiatan" rows="3" required>{{ $kegiatan->rincian_kegiatan }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="tanggal_kegiatan">Tanggal Kegiatan</label>
+            <input type="date" class="form-control" id="tanggal_kegiatan" name="tanggal_kegiatan" value="{{ \Illuminate\Support\Carbon::parse($kegiatan->tanggal_kegiatan)->format('Y-m-d') }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="fotos">Foto</label>
+            <input type="file" class="form-control-file" id="fotos" name="fotos[]" multiple onchange="previewSelectedPhotos(event)">
+            <div class="mt-3">
+                @foreach($kegiatan->fotos as $foto)
+                    <div id="foto-{{ $foto->id }}" class="foto-wrapper mb-3 d-flex align-items-center">
+                        <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan" style="max-width: 100px;">
+                        <div class="ml-3">
+                            <button type="button" onclick="changeFoto({{ $foto->id }})" class="btn btn-info btn-sm">Ganti Foto</button>
+                            <button type="button" onclick="ambilFotoDariKamera({{ $foto->id }})" class="btn btn-primary btn-sm">Ambil Foto dari Kamera</button>
+                            <button type="button" onclick="deleteFoto({{ $foto->id }})" class="btn btn-danger btn-sm">Hapus Foto</button>
+                            <input type="file" class="form-control-file d-none" id="input-foto-{{ $foto->id }}" name="replaced_fotos[{{ $foto->id }}]" onchange="previewFoto({{ $foto->id }})">
+                            <input type="hidden" id="camera-photo-{{ $foto->id }}" name="camera_photos[{{ $foto->id }}]">
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+    </form>
+</div>
+
+<!-- Modal Ambil Foto dari Kamera -->
+<div class="modal fade" id="ambilFotoModal" tabindex="-1" aria-labelledby="ambilFotoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editKegiatanModalLabel{{ $kegiatan->id }}">Edit Kegiatan</h5>
+                <h5 class="modal-title" id="ambilFotoModalLabel">Ambil Foto dari Kamera</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="editKegiatanForm{{ $kegiatan->id }}" action="{{ route('kegiatan.update', $kegiatan->id) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="nama_kegiatan{{ $kegiatan->id }}">Nama Kegiatan</label>
-                        <input type="text" class="form-control" id="nama_kegiatan{{ $kegiatan->id }}" name="nama_kegiatan" value="{{ $kegiatan->nama_kegiatan }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="rincian_kegiatan{{ $kegiatan->id }}">Rincian Kegiatan</label>
-                        <textarea class="form-control" id="rincian_kegiatan{{ $kegiatan->id }}" name="rincian_kegiatan" required>{{ $kegiatan->rincian_kegiatan }}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="tanggal_kegiatan{{ $kegiatan->id }}">Tanggal Kegiatan</label>
-                        <input type="date" class="form-control" id="tanggal_kegiatan{{ $kegiatan->id }}" name="tanggal_kegiatan" value="{{ $kegiatan->tanggal_kegiatan }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="fotos{{ $kegiatan->id }}">Upload Foto</label>
-                        <input type="file" class="form-control-file" id="fotos{{ $kegiatan->id }}" name="fotos[]" multiple accept="image/*" onchange="previewImages(event, 'previewContainer{{ $kegiatan->id }}')">
-                    </div>
-                    <div class="form-group">
-                        <label for="cameraInput{{ $kegiatan->id }}">Ambil Foto dengan Kamera</label>
-                        <div class="camera-container">
-                            <video id="camera{{ $kegiatan->id }}" class="w-100" autoplay></video>
-                            <button type="button" class="btn btn-primary mt-2" onclick="capturePhoto{{ $kegiatan->id }}()">Ambil Foto</button>
-                            <button type="button" class="btn btn-secondary mt-2" id="switchCamera{{ $kegiatan->id }}">Ganti Kamera</button>
-                        </div>
-                        <canvas id="canvas{{ $kegiatan->id }}" style="display: none;"></canvas>
-                        <div id="cameraPreview{{ $kegiatan->id }}" class="d-flex flex-wrap"></div>
-                    </div>
-                    <div id="previewContainer{{ $kegiatan->id }}" class="d-flex flex-wrap"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
+            <div class="modal-body">
+                <!-- Tempatkan elemen video kamera di sini -->
+                <video id="video" width="100%" height="auto" autoplay></video>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="ambilFoto()">Ambil Foto</button>
+                <button type="button" class="btn btn-info" onclick="gantiKamera()">Ganti Kamera</button>
+            </div>
         </div>
     </div>
 </div>
+
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endsection
+
+@push('scripts')
 <script>
-    let currentStream{{ $kegiatan->id }};
-    let video{{ $kegiatan->id }} = document.getElementById('camera{{ $kegiatan->id }}');
-    let canvas{{ $kegiatan->id }} = document.getElementById('canvas{{ $kegiatan->id }}');
-    let cameraPreview{{ $kegiatan->id }} = document.getElementById('cameraPreview{{ $kegiatan->id }}');
-    let currentFacingMode{{ $kegiatan->id }} = 'user'; // Default to front camera
+    let videoStream = null;
+    let currentFacingMode = 'environment'; // 'user' for front camera, 'environment' for back camera
+    let currentFotoId = null; // Variable untuk menyimpan fotoId saat ini
 
-    $(document).ready(function() {
-        $('#editKegiatanModal{{ $kegiatan->id }}').on('shown.bs.modal', function () {
-            startCamera{{ $kegiatan->id }}();
-        });
+    // Fungsi untuk memulai video dari kamera
+    function startCamera() {
+        navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: currentFacingMode
+                }
+            })
+            .then(function(stream) {
+                videoStream = stream;
+                var video = document.getElementById('video');
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function(error) {
+                console.error('Error accessing the camera: ', error);
+            });
+    }
 
-        $('#editKegiatanModal{{ $kegiatan->id }}').on('hidden.bs.modal', function () {
-            stopCamera{{ $kegiatan->id }}();
-        });
+    // Fungsi untuk mengambil foto dari kamera untuk foto tertentu
+    function ambilFotoDariKamera(fotoId) {
+        $('#input-foto-' + fotoId).val(''); // Reset nilai input file
+        $('#ambilFotoModal').modal('show'); // Memunculkan modal ambil foto
+        currentFotoId = fotoId; // Simpan fotoId saat ini ke dalam variabel
+    }
 
-        $('#switchCamera{{ $kegiatan->id }}').on('click', function() {
-            currentFacingMode{{ $kegiatan->id }} = currentFacingMode{{ $kegiatan->id }} === 'user' ? 'environment' : 'user';
-            startCamera{{ $kegiatan->id }}();
-        });
+    // Fungsi untuk mengambil foto
+    function ambilFoto() {
+        var video = document.getElementById('video');
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        var context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Konversi gambar ke base64 untuk ditampilkan di preview atau dikirim ke server
+        var base64Image = canvas.toDataURL('image/jpeg');
+
+        if (currentFotoId) {
+            // Ganti foto yang sudah ada dengan foto baru
+            var img = document.querySelector('#foto-' + currentFotoId + ' img');
+            img.src = base64Image;
+
+            // Sisipkan base64Image ke dalam input hidden yang bersangkutan
+            var inputFoto = document.getElementById('camera-photo-' + currentFotoId);
+            inputFoto.value = base64Image;
+        } else {
+            // Tampilkan gambar di preview untuk inputan baru
+            var img = document.createElement('img');
+            img.src = base64Image;
+            img.style.maxWidth = '100px'; // Sesuaikan ukuran sesuai kebutuhan
+            var previewContainer = document.getElementById('new-photos-preview');
+            previewContainer.appendChild(img);
+
+            // Sisipkan base64Image ke dalam input hidden yang bersangkutan
+            var inputFoto = document.createElement('input');
+            inputFoto.type = 'hidden';
+            inputFoto.name = 'camera_photos[]';
+            inputFoto.value = base64Image;
+            previewContainer.appendChild(inputFoto);
+        }
+
+        // Tutup modal setelah ambil foto
+        $('#ambilFotoModal').modal('hide');
+
+        // Hentikan stream kamera
+        stopCamera();
+    }
+
+    // Fungsi untuk mengganti kamera (depan/belakang)
+    function gantiKamera() {
+        currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment'; // Toggle mode kamera
+        stopCamera();
+        startCamera();
+    }
+
+    // Fungsi untuk menghentikan video stream kamera
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(function(track) {
+                track.stop();
+            });
+        }
+    }
+
+    // Panggil fungsi untuk memulai kamera saat modal ditampilkan
+    $('#ambilFotoModal').on('shown.bs.modal', function() {
+        startCamera();
     });
 
-    function startCamera{{ $kegiatan->id }}() {
-        if (currentStream{{ $kegiatan->id }}) {
-            currentStream{{ $kegiatan->id }}.getTracks().forEach(track => track.stop());
-        }
+    // Panggil fungsi untuk menghentikan kamera saat modal ditutup
+    $('#ambilFotoModal').on('hidden.bs.modal', function() {
+        stopCamera();
+    });
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode{{ $kegiatan->id }} } })
-            .then(stream => {
-                currentStream{{ $kegiatan->id }} = stream;
-                video{{ $kegiatan->id }}.srcObject = stream;
-            })
-            .catch(err => console.error('Error accessing camera: ', err));
-    }
+    // Fungsi untuk menampilkan preview foto yang dipilih
+    function previewSelectedPhotos(event) {
+        var files = event.target.files;
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var reader = new FileReader();
 
-    function stopCamera{{ $kegiatan->id }}() {
-        if (currentStream{{ $kegiatan->id }}) {
-            currentStream{{ $kegiatan->id }}.getTracks().forEach(track => track.stop());
-        }
-    }
-
-    function capturePhoto{{ $kegiatan->id }}() {
-        const context = canvas{{ $kegiatan->id }}.getContext('2d');
-        canvas{{ $kegiatan->id }}.width = video{{ $kegiatan->id }}.videoWidth;
-        canvas{{ $kegiatan->id }}.height = video{{ $kegiatan->id }}.videoHeight;
-        context.drawImage(video{{ $kegiatan->id }}, 0, 0, canvas{{ $kegiatan->id }}.width, canvas{{ $kegiatan->id }}.height);
-
-        const img = document.createElement('img');
-        img.src = canvas{{ $kegiatan->id }}.toDataURL('image/png');
-        img.className = 'img-fluid';
-        img.style.maxWidth = '100px';
-        img.style.marginRight = '10px';
-        cameraPreview{{ $kegiatan->id }}.appendChild(img);
-
-        // Simpan gambar ke dalam input file
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'capturedImages[]';
-        input.value = img.src;
-        document.getElementById('editKegiatanForm{{ $kegiatan->id }}').appendChild(input);
-    }
-
-    function previewImages(event, previewContainerId) {
-        const files = event.target.files;
-        const previewContainer = document.getElementById(previewContainerId);
-        previewContainer.innerHTML = '';
-
-        for (let i = 0; i < files.length; i++) {
-            const reader = new FileReader();
             reader.onload = function(e) {
-                const img = document.createElement('img');
+                var img = document.createElement('img');
                 img.src = e.target.result;
-                img.className = 'img-fluid';
-                img.style.maxWidth = '100px';
-                img.style.marginRight = '10px';
+                img.style.maxWidth = '100px'; // Sesuaikan ukuran sesuai kebutuhan
+                var previewContainer = document.getElementById('new-photos-preview');
                 previewContainer.appendChild(img);
-            };
-            reader.readAsDataURL(files[i]);
+            }
+
+            reader.readAsDataURL(file);
         }
+    }
+
+    // Fungsi untuk mengubah foto yang sudah ada
+    function changeFoto(fotoId) {
+        document.getElementById('input-foto-' + fotoId).click();
+    }
+
+    // Fungsi untuk menampilkan preview foto yang akan diubah
+    function previewFoto(fotoId) {
+        var input = document.getElementById('input-foto-' + fotoId);
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = document.querySelector('#foto-' + fotoId + ' img');
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    // Fungsi untuk menghapus foto
+    function deleteFoto(fotoId) {
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        fetch('/kegiatan/foto/' + fotoId, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                var fotoElement = document.getElementById('foto-' + fotoId);
+                fotoElement.parentNode.removeChild(fotoElement);
+                showAlert('success', 'Foto berhasil dihapus.');
+            } else {
+                showAlert('danger', 'Gagal menghapus foto.');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Terjadi kesalahan: ' + error.message);
+        });
+    }
+
+    // Fungsi untuk menampilkan alert
+    function showAlert(type, message) {
+        var alertDiv = document.createElement('div');
+        alertDiv.classList.add('alert', 'alert-' + type, 'alert-dismissible', 'fade', 'show');
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerHTML = message + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+
+        var container = document.querySelector('.container');
+        container.insertBefore(alertDiv, container.firstChild);
+
+        setTimeout(function() {
+            $(alertDiv).alert('close');
+        }, 3000);
     }
 </script>
+@endpush
