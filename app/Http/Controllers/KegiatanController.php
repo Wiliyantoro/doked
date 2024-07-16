@@ -36,7 +36,7 @@ class KegiatanController extends Controller
             'nama_kegiatan' => 'required',
             'rincian_kegiatan' => 'required',
             'tanggal_kegiatan' => 'required|date',
-            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120'
+            'fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:50000'
         ]);
     
         $kegiatan = new Kegiatan();
@@ -81,9 +81,9 @@ class KegiatanController extends Controller
             'nama_kegiatan' => 'required',
             'rincian_kegiatan' => 'required',
             'tanggal_kegiatan' => 'required|date',
-            'replaced_fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            'replaced_fotos.*' => 'image|mimes:jpeg,png,jpg,gif|max:50000',
             'camera_photos.*' => 'nullable|string', // validasi untuk base64
-            'fotos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // Validasi untuk foto baru
+            'fotos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:50000', // Validasi untuk foto baru
         ]);
     
         $kegiatan = Kegiatan::findOrFail($id);
