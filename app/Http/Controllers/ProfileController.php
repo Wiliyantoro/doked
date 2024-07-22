@@ -21,16 +21,22 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         // Validasi data
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . Auth::id(),
-            'current_password' => 'required',
-            'password' => 'nullable|string|min:8|confirmed',
             'foto_pengguna' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        ];
 
-        // Cek kata sandi lama
-        if (!\Hash::check($request->current_password, Auth::user()->password)) {
+        // Jika password baru diisi, tambahkan validasi
+        if ($request->filled('password')) {
+            $rules['current_password'] = 'required';
+            $rules['password'] = 'required|string|min:8|confirmed';
+        }
+
+        $request->validate($rules);
+
+        // Cek kata sandi lama jika password baru diisi
+        if ($request->filled('password') && !\Hash::check($request->current_password, Auth::user()->password)) {
             return back()->withErrors(['current_password' => 'Kata sandi lama salah.']);
         }
 
@@ -39,12 +45,21 @@ class ProfileController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
 
+        // Perbarui password jika diisi
         if ($request->filled('password')) {
             $user->password = \Hash::make($request->password);
         }
 
         // Handle foto_pengguna
         if ($request->hasFile('foto_pengguna')) {
+            // Hapus foto lama jika ada
+            if ($user->foto_pengguna) {
+                $oldPhotoPath = public_path('storage/foto_pengguna/' . $user->foto_pengguna);
+                if (file_exists($oldPhotoPath)) {
+                    unlink($oldPhotoPath);
+                }
+            }
+
             $file = $request->file('foto_pengguna');
             $filename = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path('storage/foto_pengguna'), $filename);

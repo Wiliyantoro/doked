@@ -48,25 +48,37 @@ class UserController extends Controller
             'edit_name' => 'required',
             'edit_email' => 'required|email|unique:users,email,' . $id,
             'edit_level' => 'required',
-            'edit_foto_pengguna' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            'edit_foto_pengguna' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'current_password' => 'required_with:password',
+            'password' => 'nullable|string|min:8|confirmed'
         ]);
-
+    
         $user = User::findOrFail($id);
         $user->name = $request->edit_name;
         $user->email = $request->edit_email;
         $user->level = $request->edit_level;
-
+    
         if ($request->hasFile('edit_foto_pengguna')) {
             $foto = $request->file('edit_foto_pengguna');
             $nama_foto = time() . '_' . $foto->getClientOriginalName();
             $foto->move(public_path('storage/foto_pengguna'), $nama_foto);
             $user->foto_pengguna = $nama_foto;
         }
-
+    
+        if ($request->filled('password')) {
+            // Cek kata sandi lama
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json(['errors' => ['current_password' => ['Kata sandi lama salah.']]], 400);
+            }
+    
+            $user->password = Hash::make($request->password);
+        }
+    
         $user->save();
-
+    
         return response()->json(['success' => 'User berhasil diperbarui!']);
     }
+    
 
     public function destroy($id)
     {

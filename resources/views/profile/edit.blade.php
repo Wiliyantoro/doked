@@ -51,7 +51,9 @@
         </div>
 
         <div class="form-group">
-            <input type="checkbox" id="show_passwords" onclick="togglePasswords()"> Lihat Kata Sandi
+            <button type="button" class="btn btn-outline-secondary" id="toggle_passwords">
+                <i class="fa fa-eye" id="password_icon"></i> Tampilkan
+            </button>
         </div>
 
         <div class="form-group">
@@ -91,17 +93,19 @@
         reader.readAsDataURL(file);
     }
 
-    function togglePasswords() {
+    document.getElementById('toggle_passwords').addEventListener('click', function() {
         var passwordFields = ['current_password', 'password', 'password_confirmation'];
+        var isVisible = document.getElementById('password').type === "text";
+        
         passwordFields.forEach(function(fieldId) {
             var field = document.getElementById(fieldId);
-            if (field.type === "password") {
-                field.type = "text";
-            } else {
-                field.type = "password";
-            }
+            field.type = isVisible ? "password" : "text";
         });
-    }
+
+        var icon = document.getElementById('password_icon');
+        icon.className = isVisible ? 'fa fa-eye' : 'fa fa-eye-slash';
+        this.textContent = isVisible ? ' Tampilkan' : ' Sembunyikan';
+    });
 </script>
 @endpush
 
@@ -109,5 +113,11 @@
     .form-width {
         max-width: 600px;
         margin: auto;
+    }
+
+    .btn-outline-secondary {
+        border: none;
+        background: none;
+        cursor: pointer;
     }
 </style>
