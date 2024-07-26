@@ -29,9 +29,11 @@
         }
         th, td {
             padding: 10px;
+            text-align: center;
         }
         .photo-cell {
-            width: 25%;
+            width: 100%;
+            text-align: center;
         }
         img {
             max-width: 100%;
@@ -51,39 +53,18 @@
     </div>
     <div class="content">
         <p>{{ $kegiatan->rincian_kegiatan }}</p>
-        @foreach ($kegiatan->fotos->chunk(4) as $page)
+        @foreach ($kegiatan->fotos->chunk(2) as $page)
             @if(!$loop->first)
                 <div class="page-break"></div>
             @endif
             <table>
-                @if($page->count() == 3)
+                @foreach ($page as $foto)
                     <tr>
                         <td class="photo-cell">
-                            <img src="{{ url('storage/' . $page[0]->nama_file) }}" alt="Foto Kegiatan">
-                        </td>
-                        <td class="photo-cell">
-                            <img src="{{ url('storage/' . $page[1]->nama_file) }}" alt="Foto Kegiatan">
+                            <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan">
                         </td>
                     </tr>
-                    <tr>
-                        <td class="photo-cell" colspan="2" style="text-align: center;">
-                            <img src="{{ url('storage/' . $page[2]->nama_file) }}" alt="Foto Kegiatan">
-                        </td>
-                    </tr>
-                @else
-                    @foreach ($page->chunk(2) as $row)
-                        <tr>
-                            @foreach ($row as $foto)
-                                <td class="photo-cell">
-                                    <img src="{{ url('storage/' . $foto->nama_file) }}" alt="Foto Kegiatan">
-                                </td>
-                            @endforeach
-                            @if($row->count() < 2)
-                                <td class="photo-cell"></td>
-                            @endif
-                        </tr>
-                    @endforeach
-                @endif
+                @endforeach
             </table>
         @endforeach
     </div>
